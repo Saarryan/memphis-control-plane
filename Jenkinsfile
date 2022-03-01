@@ -1,7 +1,9 @@
 def dockerImagesRepo = "strechinc"
-def imageName = "strech-server"
+def imageName = "strech-server-beta"
 def gitURL = "git@github.com:STRECH-LTD/strech-server.git"
+def gitBranch = "beta"
 unique_Id = UUID.randomUUID().toString()
+def DOCKER_HUB_CREDS = credentials('docker-hub')
 
 node {
   try{
@@ -13,11 +15,14 @@ node {
     }
 
     stage('Push docker image') {
-        sh "docker tag ${dockerImagesRepo}/${imageName} ${dockerImagesRepo}/${imageName}:${unique_Id}"
-        sh "docker push ${dockerImagesRepo}/${imageName}:${unique_Id}"
-        sh "docker push ${dockerImagesRepo}/${imageName}:latest"
-        sh "docker image rm ${dockerImagesRepo}/${imageName}:latest"
-        sh "docker image rm ${dockerImagesRepo}/${imageName}:${unique_Id}"
+	withCredentials([usernamePassword(credentialsId: 'docker-hub', usernameVariable: 'DOCKER_HUB_CREDS_USR', passwordVariable: 'DOCKER_HUB_CREDS_PSW')]) {
+		sh "docker login -u $DOCKER_HUB_CREDS_USR -p $DOCKER_HUB_CREDS_PSW"
+	        sh "docker tag ${dockerImagesRepo}/${imageName} ${dockerImagesRepo}/${imageName}:${unique_Id}"
+		sh "docker push ${dockerImagesRepo}/${imageName}:${unique_Id}"
+		sh "docker push ${dockerImagesRepo}/${imageName}:latest"
+		sh "docker image rm ${dockerImagesRepo}/${imageName}:latest"
+		sh "docker image rm ${dockerImagesRepo}/${imageName}:${unique_Id}"
+	}
     }
     
     //stage('Push image to kubernetes') {
